@@ -1,0 +1,108 @@
+#!/bin/sh
+
+GPG="env - GNUPGHOME=$GNUPGHOME gpg"
+KEYS_FILE=keys
+DIR_ENCRYPTED=data_encrypted
+DIR_PLAINTEXT=data
+ENC_EXT='tar.asc'
+GPG_ENCOPTS='--armor'
+
+function list_keys() {
+    perl -nE '/^pub:(.*)$/ and say $1 =~ s/\s+//gr' < "$KEYS_FILE"
+}
+
+function gpg_encrypt_params() {
+    list_keys | perl -nE 'chomp; print "--recipient $_ "'
+}
+
+function gpg_encrypt_cmd() {
+    $GPG $GPG_ENCOPTS "$@" --encrypt `gpg_encrypt_params`
+}
+
+function gpg_decrypt_cmd() {
+    $GPG $GPG_DECOPTS "$@"
+}
+
+function initialize() {
+    echo "Creating '$KEYS_FILE' file"
+
+    # TODO: maybe not empty, give some info with comments
+    touch "$KEYS_FILE"
+
+    echo "Creating $DIR_ENCRYPTED (for encrypted data)"
+    mkdir -p "$DIR_ENCRYPTED"
+    echo "Creating $DIR_PLAINTEXT (for plaintext data)"
+    mkdir -p "$DIR_PLAINTEXT"
+}
+
+function verify() {
+    echo Verifying keys file >&2
+    if ! $GPG --verify "$KEYS_FILE.asc" "$KEYS_FILE"; then
+        echo The file "$KEYS_FILE" was not signed by a trusted user >&2
+        echo Check the content and use the '"sign"' command. >&2
+        exit 1
+    fi
+}
+
+function sign() {
+    echo You verified the content of "$KEYS_FILE". >&2
+    $GPG $GPG_ENCOPTS --detach-sign "$KEYS_FILE"
+}
+
+function close() {
+    mkdir -p "${DIR_ENCRYPTED}"
+    for f in `ls "$DIR_PLAINTEXT"`; do
+        tar cf - "${DIR_PLAINTEXT}/${f}" \
+        | gpg_encrypt_cmd --output "${DIR_ENCRYPTED}/${f}.${ENC_EXT}"
+    done
+}
+
+function open() {
+    if [ "x$1" != 'x' ]; then
+        echo "Opening files:" && \
+        ls "$DIR_ENCRYPTED" \
+            | perl -nE "/^.*${1}.*\.asc$/ and print ' - ', \$_"
+    else
+        echo Opening all files
+    fi
+
+    echo -n "Enter private key passphrase: "
+    read -s passphrase
+    echo
+
+    for f in `ls "$DIR_ENCRYPTED" | perl -nE "/^.*${1}.*\.${ENC_EXT}$/ and print"`
+    do
+        echo opening file "$f"
+        cat "$DIR_ENCRYPTED/$f" \
+        | gpg_decrypt_cmd \
+            --batch --yes \
+            --passphrase "$passphrase" \
+        | tar xf -
+    done
+}
+
+action=$1; shift
+case "$action" in
+
+    'init')
+        initialize "$@"
+    ;;
+
+    'close')
+        verify
+        close "$@"
+    ;;
+
+    'open')
+        open "$@"
+    ;;
+
+    'sign')
+        sign
+    ;;
+
+    *)
+        echo "actions: init | close | open | sign"
+    ;;
+
+esac
