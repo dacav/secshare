@@ -36,6 +36,8 @@ The helper script is designed to work under the following assumptions:
 Concept
 -------
 
+Fork the repository and clone it locally.
+
 Your sensitive data is stored in the `data` directory.  Note that the
 `data` directory is added to the `.gitignore` file and **must never be
 commited**.
@@ -54,10 +56,15 @@ phase.
 
 The `keys` file is signed by one member of the team. This ensures
 the `keys` file to contain only authorized keys, hence avoiding an
-attacker to put her key among the recipients of encryption.
+attacker to put her key among the recipients of encryption. This step is
+handled by `secshare`, and generates a detached signature file named
+`keys.asc`.
 
 Since encrypted files cannot be read, an index file documenting the
 content of each of them is recommended, along with descriptive file names.
+
+You share everything by pushing `encrypted_data`, `keys`, `keys.asc` and
+the index file (if any)
 
 Helper script
 -------------
