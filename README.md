@@ -65,13 +65,13 @@ Helper script
 The `secshare` script is a simple helper program written in Bourne Shell
 (sh). The following commands are supported:
 
- 1. `./secshare init`
+ 1. `./secshare init`:
 
     Initialize the repository unless it wasn't already initialized. This
     simply creates the filesystem structure and initializes the `keys`
     file;
 
- 2. `./secshare close`
+ 2. `./secshare close`:
 
     Encrypt each sensitive item (file or directory) in the `data`
     directory. Put the resulting encrypted files in the `encrypted_data`
@@ -85,11 +85,22 @@ The `secshare` script is a simple helper program written in Bourne Shell
     (A trusted user is someone whose key was signed by you or another
     user you trust. Again, [RTFM][futureboy]!).
 
- 3. `./secshare sign`
+ 3. `./secshare sign`:
 
     Sign the `keys` file with a detached signature. This is a required
     step in order for you and other team members to `./secshare close`
     successfully.  One should never sign blindly the `keys` file!
+
+ 4. `./secshare open`:
+
+    Open one or more files contained in `encrypted_data`.
+
+    Files cannot be opened unless they were encrypted with the user's
+    public key (via `./secshare close`).
+
+    A pattern can be specified to ask for one or more files to be
+    decrypted. If not specified, the script will try to decrypt all
+    encrypted files.
 
 File format of the `keys` file:
 -------------------------------
