@@ -1,0 +1,6 @@
+This file contains a list of identifiers referring to the keys which are
+allowed to open the encrypted files.
+
+The format is interpreted by the `secshare` script: lines starting with
+"pub:" will be recognized and considered as public key identifiers. Read
+the README.md file for details.
